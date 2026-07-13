@@ -29,11 +29,14 @@ class TestMatchAuditCli:
         assert result.exit_code == 0
         assert "not yet implemented" in result.output
 
-    def test_compare_command_stubbed(self, cli_runner: CliRunner) -> None:
-        """Running ``matchaudit compare`` shows a stub message."""
-        result: Result = cli_runner.invoke(main, ["compare"])
+    def test_compare_command_help_shows_flags(self, cli_runner: CliRunner) -> None:
+        """Running ``matchaudit compare --help`` shows expected options."""
+        result: Result = cli_runner.invoke(main, ["compare", "--help"])
         assert result.exit_code == 0
-        assert "not yet implemented" in result.output
+        assert "--source" in result.output
+        assert "--captured" in result.output
+        assert "--key-columns" in result.output
+        assert "--output" in result.output
 
     @pytest.mark.parametrize(
         ("args", "expected_exit"),

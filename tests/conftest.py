@@ -25,3 +25,15 @@ def fixtures_dir() -> Generator[Path, None, None]:
 def sample_csv(fixtures_dir: Path) -> Path:
     """Provide the path to the sample CSV fixture."""
     return fixtures_dir / "sample.csv"
+
+
+@pytest.fixture
+def sample_xlsx(fixtures_dir: Path) -> Path:
+    """Provide the path to the sample Excel fixture."""
+    return fixtures_dir / "sample.xlsx"
+
+
+@pytest.fixture
+def misaligned_csv(fixtures_dir: Path) -> Path:
+    """Provide the path to the misaligned CSV fixture."""
+    return fixtures_dir / "misaligned.csv"
