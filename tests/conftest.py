@@ -37,3 +37,9 @@ def sample_xlsx(fixtures_dir: Path) -> Path:
 def misaligned_csv(fixtures_dir: Path) -> Path:
     """Provide the path to the misaligned CSV fixture."""
     return fixtures_dir / "misaligned.csv"
+
+
+@pytest.fixture
+def sample_capture(fixtures_dir: Path) -> Path:
+    """Provide the path to the synthetic OCR capture fixture."""
+    return fixtures_dir / "sample-capture.png"

@@ -13,17 +13,30 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 from pandas import DataFrame
-from PIL import Image
 
 from matchaudit.readers import DataReader
 
 # ---------------------------------------------------------------------------
-# Lazy EasyOCR singleton
+# Lazy optional dependencies — each guarded so the module loads gracefully
+# when not installed (CI, minimal environments).
 # ---------------------------------------------------------------------------
 
 _OCR_INSTANCE: object | None = None
+
+_MISSING_DEPS: list[str] = []
+
+try:
+    import numpy as np  # noqa: F811
+except ImportError:
+    np = None  # type: ignore[assignment]
+    _MISSING_DEPS.append("numpy")
+
+try:
+    from PIL import Image  # noqa: F811
+except ImportError:
+    Image = None  # type: ignore[assignment]
+    _MISSING_DEPS.append("pillow")
 
 try:
     import easyocr  # noqa: F811
@@ -277,6 +290,13 @@ class OcrReader(DataReader):
         """
         if not path.exists():
             raise FileNotFoundError(f"Image not found: {path}")
+
+        if _MISSING_DEPS:
+            raise ImportError(
+                "Missing optional dependencies for OCR: "
+                f"{', '.join(_MISSING_DEPS)}. "
+                "Install with: pip install matchaudit[ocr]"
+            )
 
         # Merge call-time kwargs with constructor defaults
         conf_th = kwargs.get("conf_threshold", self._conf_threshold)

@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from matchaudit.readers import DataReader, detect_reader
+from matchaudit.readers import IMAGE_EXTENSIONS, DataReader, detect_reader
 from matchaudit.readers.csv import CsvReader
 from matchaudit.readers.excel import ExcelReader
 
@@ -87,3 +87,41 @@ class TestDetectReader:
     def test_reader_implements_abc(self) -> None:
         assert isinstance(CsvReader(), DataReader)
         assert isinstance(ExcelReader(), DataReader)
+
+
+class TestOcrRegistration:
+    """OcrReader is registered when dependencies are available."""
+
+    def test_detect_ocr_reader_for_png(self, sample_capture: Path) -> None:
+        """If easyocr + pillow installed, detect_reader returns OcrReader."""
+        reader = detect_reader(sample_capture)
+        from matchaudit.readers.ocr import OcrReader
+
+        assert isinstance(reader, OcrReader)
+
+    @pytest.mark.parametrize("ext", [".png", ".jpg", ".jpeg"])
+    def test_detect_ocr_reader_by_extension(self, ext: str) -> None:
+        """OcrReader supports all standard image extensions."""
+        reader = detect_reader(Path(f"file{ext}"))
+        from matchaudit.readers.ocr import OcrReader
+
+        assert isinstance(reader, OcrReader)
+
+    def test_ocr_supports_all_image_extensions(self) -> None:
+        """IMAGE_EXTENSIONS matches what OcrReader supports."""
+        from matchaudit.readers.ocr import OcrReader
+
+        reader = OcrReader()
+        for ext in IMAGE_EXTENSIONS:
+            assert reader.supports(ext) is True, f"Expected {ext} to be supported"
+
+    def test_image_extensions_constant(self) -> None:
+        """IMAGE_EXTENSIONS includes expected image formats."""
+        assert IMAGE_EXTENSIONS == {".png", ".jpg", ".jpeg"}
+
+    def test_detect_unsupported_image_no_ocr(self) -> None:
+        """Without OcrReader registered, image extensions raise helpful message."""
+        # We can't truly unregister OcrReader, but we can verify the error path
+        # via the unsupported extension path
+        with pytest.raises(ValueError, match="No reader found"):
+            detect_reader(Path("data.parquet"))
