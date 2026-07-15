@@ -28,7 +28,6 @@ MANIFEST
 
 # uv
 .venv/
-uv.lock
 
 # PyInstaller
 *.manifest
@@ -75,3 +74,10 @@ dmypy.json
 .env
 .envrc
 *.env.local
+
+# Local tool caches
+.atl/
+.codegraph/
+
+# Project notes
+MatchAudit.md
