@@ -32,6 +32,9 @@ dev = [
     "ruff>=0.5",
 ]
 
+[project.optional-dependencies]
+ocr = ["easyocr", "pillow"]
+
 [project.scripts]
 matchaudit = "matchaudit.cli:main"
 
