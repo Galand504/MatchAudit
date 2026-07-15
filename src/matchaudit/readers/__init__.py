@@ -51,6 +51,20 @@ class DataReader(ABC):
 _READERS: list[DataReader] | None = None
 
 
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+
+
+def _register_ocr_reader() -> None:
+    """Lazy-register OcrReader if available (requires easyocr + pillow)."""
+    try:
+        from matchaudit.readers.ocr import OcrReader  # noqa: F401
+
+        # Register in the existing reader list
+        _READERS.append(OcrReader())
+    except ImportError:
+        pass
+
+
 def _ensure_readers() -> list[DataReader]:
     """Lazy-initialise the reader registry."""
     global _READERS
@@ -59,6 +73,7 @@ def _ensure_readers() -> list[DataReader]:
         from matchaudit.readers.excel import ExcelReader
 
         _READERS = [CsvReader(), ExcelReader()]
+        _register_ocr_reader()
     return _READERS
 
 
@@ -78,6 +93,12 @@ def detect_reader(path: Path) -> DataReader:
     for reader in _ensure_readers():
         if reader.supports(ext):
             return reader
+    if ext in IMAGE_EXTENSIONS:
+        raise ValueError(
+            f"No reader found for {path!r} (extension {ext!r}). "
+            "Image files require easyocr. "
+            "Install with: pip install matchaudit[ocr]"
+        )
     raise ValueError(
         f"No reader found for {path!r} (extension {ext!r}). "
         "Supported: .csv, .xlsx, .xls"

@@ -59,6 +59,25 @@ def main() -> None:
     type=click.Choice(["json"]),
     help="Output format (default: Rich console).",
 )
+@click.option(
+    "--ocr",
+    is_flag=True,
+    default=False,
+    help="Force OCR processing for image files (requires easyocr).",
+)
+@click.option(
+    "--ocr-language",
+    default="en",
+    show_default=True,
+    help="OCR language(s), comma-separated.",
+)
+@click.option(
+    "--ocr-conf-threshold",
+    default=0.0,
+    type=float,
+    show_default=True,
+    help="OCR confidence threshold (0.0-1.0).",
+)
 def compare(
     source: Path,
     captured: Path,
@@ -67,6 +86,9 @@ def compare(
     start: str | None,
     end: str | None,
     output: str | None,
+    ocr: bool,
+    ocr_language: str,
+    ocr_conf_threshold: float,
 ) -> None:
     """Compare two datasets and report differences.
 
@@ -76,8 +98,26 @@ def compare(
     """
     try:
         # 1. Detect readers and load DataFrames
-        source_reader = detect_reader(source)
-        captured_reader = detect_reader(captured)
+        if ocr:
+            try:
+                import easyocr  # noqa: F401
+            except ImportError:
+                raise click.ClickException(
+                    "EasyOCR is not installed. "
+                    "Install with: pip install matchaudit[ocr]"
+                )
+            from matchaudit.readers.ocr import OcrReader
+
+            lang_list = [lang.strip() for lang in ocr_language.split(",")]
+            source_reader = OcrReader(
+                language=lang_list, conf_threshold=ocr_conf_threshold
+            )
+            captured_reader = OcrReader(
+                language=lang_list, conf_threshold=ocr_conf_threshold
+            )
+        else:
+            source_reader = detect_reader(source)
+            captured_reader = detect_reader(captured)
 
         source_df = source_reader.read(source)
         captured_df = captured_reader.read(captured)
