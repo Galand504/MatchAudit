@@ -14,8 +14,6 @@ from matchaudit.readers import detect_reader
 
 # Common key-column candidates, in priority order
 _KEY_COLUMN_CANDIDATES = [
-    "id_pais",
-    "id_revista",
     "id",
     "codigo",
     "nombre",
@@ -24,6 +22,7 @@ _KEY_COLUMN_CANDIDATES = [
     "email",
     "username",
     "usuario",
+    "pais",
     "slug",
     "reference",
     "referencia",
@@ -232,6 +231,13 @@ def compare(
     help="OCR confidence threshold (0.0-1.0).",
 )
 @click.option(
+    "--prefix-match",
+    is_flag=True,
+    default=False,
+    help="Match captures by prefix: 'usuarios.csv' matches both "
+    "'usuarios_primer.png' and 'usuarios_ultimo.png'.",
+)
+@click.option(
     "--ocr-upscale",
     is_flag=True,
     default=False,
@@ -241,6 +247,7 @@ def batch_compare(
     source_dir: Path,
     captured_dir: Path,
     key_columns: str | None,
+    prefix_match: bool,
     ocr_language: str,
     ocr_conf_threshold: float,
     ocr_upscale: bool,
@@ -249,6 +256,10 @@ def batch_compare(
 
     For each file in SOURCE_DIR, looks for a matching file (same stem) in
     CAPTURED_DIR.  Source files: .csv, .xlsx.  Captured files: .png, .jpg, .jpeg.
+
+    With ``--prefix-match``, one source can match multiple captures whose
+    stem starts with ``<source_stem>_``.  E.g. ``usuarios.csv`` is compared
+    against both ``usuarios_primer.png`` and ``usuarios_ultimo.png``.
 
     Prints a summary table with per-pair results and detailed breakdowns for
     every comparison that has mismatches.
@@ -259,7 +270,7 @@ def batch_compare(
 
     # -- Scan & match ---------------------------------------------------------
     pairs, unmatched_src, unmatched_cap = _find_batch_pairs(
-        source_dir, captured_dir
+        source_dir, captured_dir, prefix_match=prefix_match
     )
 
     if not pairs:
@@ -340,9 +351,16 @@ def validate() -> None:
 
 
 def _find_batch_pairs(
-    source_dir: Path, captured_dir: Path
+    source_dir: Path,
+    captured_dir: Path,
+    prefix_match: bool = False,
 ) -> tuple[list[tuple[str, Path, Path]], set[str], set[str]]:
     """Scan *source_dir* and *captured_dir*, pair files by stem name.
+
+    When *prefix_match* is ``True``, a source stem ``s`` matches every
+    capture whose stem starts with ``s_`` (allowing one source CSV to be
+    compared against multiple captured images such as ``usuarios_primer``
+    and ``usuarios_ultimo``).
 
     Returns:
         (pairs, unmatched_sources, unmatched_captures)
@@ -361,10 +379,27 @@ def _find_batch_pairs(
         if f.is_file() and f.suffix.lower() in captured_extensions:
             captures.setdefault(f.stem, f)
 
-    common = set(sources) & set(captures)
-    pairs = [(stem, sources[stem], captures[stem]) for stem in sorted(common)]
-    unmatched_src = set(sources) - common
-    unmatched_cap = set(captures) - common
+    matched_captures: set[str] = set()
+    matched_sources: set[str] = set()
+    pairs: list[tuple[str, Path, Path]] = []
+
+    if prefix_match:
+        # Each source stem s -> prefix s_ -> all captures starting with s_
+        for src_stem in sorted(sources):
+            prefix = src_stem + "_"
+            for cap_stem, cap_path in sorted(captures.items()):
+                if cap_stem.startswith(prefix):
+                    pairs.append((src_stem, sources[src_stem], cap_path))
+                    matched_captures.add(cap_stem)
+                    matched_sources.add(src_stem)
+        unmatched_src = set(sources) - matched_sources
+        unmatched_cap = set(captures) - matched_captures
+    else:
+        common = set(sources) & set(captures)
+        pairs = [(stem, sources[stem], captures[stem]) for stem in sorted(common)]
+        unmatched_src = set(sources) - common
+        unmatched_cap = set(captures) - common
+
     return pairs, unmatched_src, unmatched_cap
 
 

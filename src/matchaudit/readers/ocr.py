@@ -330,7 +330,8 @@ def _reconstruct_table_v3(
     3. Clustering each header cell by X-gap → derives column boundaries.
     4. Filtering columns to only keep known-data columns.
     5. Clustering each data row by X-gap → assigns cells to columns.
-    6. Filtering empty/footer rows.
+    6. Merging fragment rows that fill complementary columns.
+    7. Filtering empty/footer rows.
     """
     rows = _group_by_rows(results, row_height_tolerance=row_height_tolerance)
     if not rows:
@@ -370,56 +371,91 @@ def _reconstruct_table_v3(
 
     col_names = [c[0] for c in data_columns]
 
-    # Process each data row
-    records: list[dict[str, str | None]] = []
-    for row in data_rows:
-        cells = _cluster_row_by_x_gap(row, gap_factor=gap_factor)
-        record: dict[str, str | None] = {c: None for c in col_names}
-
-        for cell in cells:
-            cell_text = " ".join(t.strip() for _, t, _ in cell).strip()
+    # Process each data row, merging adjacent fragments when bold text
+    # ends up in a separate Y-group from the rest of its row.
+    def _assign_cells(
+        _cells: list[list[tuple[list[list[float]], str, float]]],
+    ) -> dict[str, str | None]:
+        _rec: dict[str, str | None] = {c: None for c in col_names}
+        for _cell in _cells:
+            cell_text = " ".join(t.strip() for _, t, _ in _cell).strip()
             if not cell_text:
                 continue
             cell_text = _postprocess_text(cell_text)
+            if not cell_text:
+                continue  # post-processing may have stripped it entirely
+            cell_xc = _bbox_x_center(_cell[0][0])
+            # Only consider columns whose X-range actually contains the cell.
+            # Using min(…, default=None) with float("inf") is incorrect because
+            # min() returns the FIRST element when all keys are equal — so a
+            # cell far outside every column would be spuriously assigned to the
+            # first data column.
+            candidates = [
+                c for c in data_columns if c[1] <= cell_xc <= c[2]
+            ]
+            if not candidates:
+                continue
+            best_col = min(candidates, key=lambda c: abs(cell_xc - c[3]))
+            _rec[best_col[0]] = cell_text
+        return _rec
 
-            cell_xc = _bbox_x_center(cell[0][0])
+    min_data_cols = max(len(col_names) // 2, 2)  # at least half the columns
+    records: list[dict[str, str | None]] = []
 
-            # Assign to the nearest column by center distance
-            best_col: str | None = None
-            best_dist = float("inf")
-            for col_name, xs, xe, xc in data_columns:
-                dist = abs(cell_xc - xc)
-                if dist < best_dist and xs <= cell_xc <= xe:
-                    best_col = col_name
-                    best_dist = dist
-            if best_col:
-                record[best_col] = cell_text
+    i = 0
+    while i < len(data_rows):
+        row = data_rows[i]
+        cells = _cluster_row_by_x_gap(row, gap_factor=gap_factor)
+        record = _assign_cells(cells)
+        vals = [v for v in record.values() if v is not None]
 
-        records.append(record)
+        # Try merging with the next row if this row is too sparse and
+        # the next row fills complementary (non-overlapping) columns.
+        merged = False
+        if len(vals) < min_data_cols and i + 1 < len(data_rows):
+            next_cells = _cluster_row_by_x_gap(data_rows[i + 1], gap_factor=gap_factor)
+            next_record = _assign_cells(next_cells)
+            next_vals = [v for v in next_record.values() if v is not None]
+
+            # Only merge if they fill different columns (no overlap)
+            has_overlap = any(
+                record[c] is not None and next_record[c] is not None
+                for c in col_names
+            )
+            combined_vals = vals + next_vals
+            if not has_overlap and len(combined_vals) >= min_data_cols:
+                # Merge: later columns override earlier for same col
+                merged_rec = {**record}
+                for c in col_names:
+                    if next_record[c] is not None:
+                        merged_rec[c] = next_record[c]
+                record = merged_rec
+                vals = [v for v in record.values() if v is not None]
+                merged = True
+                i += 1  # skip the merged row
+
+        # Only keep rows with enough real data columns
+        if len(vals) >= min_data_cols:
+            # Skip pagination/footer rows.  Must be strict to avoid matching
+            # legitimate content such as "Journal of Latin American Studies".
+            has_footer = any(
+                v and _re.search(
+                    r"(?:^showing|rows per page|page \d+ of|\d+-\d+ of )",
+                    v.lower(),
+                )
+                for v in vals
+            )
+            if not has_footer:
+                # Deduplicate — skip if identical record already appended
+                if record not in records:
+                    records.append(record)
+
+        i += 1
 
     if not records:
         return DataFrame()
 
-    # Filter NaN rows (all data columns empty) and footer rows
-    min_data_cols = max(len(col_names) // 2, 2)  # at least half the columns
-    filtered: list[dict[str, str | None]] = []
-    for record in records:
-        vals = [v for v in record.values() if v is not None]
-        if len(vals) < min_data_cols:
-            continue
-        # Skip footer rows
-        has_footer = False
-        for v in vals:
-            if v and ("rows" in v.lower() or "of " in v.lower()):
-                has_footer = True
-                break
-        if not has_footer:
-            filtered.append(record)
-
-    if not filtered:
-        return DataFrame()
-
-    return DataFrame(filtered)
+    return DataFrame(records)
 
 
 # ---------------------------------------------------------------------------

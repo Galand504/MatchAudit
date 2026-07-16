@@ -152,6 +152,28 @@ uv run matchaudit compare \
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Comparación por lotes
+
+Si tenés una carpeta con fuentes y otra con capturas, `batch-compare` las empareja
+por nombre de archivo y las procesa todas juntas:
+
+```bash
+uv run matchaudit batch-compare \
+  --source-dir ./reportes \
+  --captured-dir ./capturas
+```
+
+Con `--prefix-match`, un mismo source se compara contra múltiples capturas que
+compartan el prefijo del nombre:
+
+```bash
+# usuarios.csv se compara contra usuarios_primer.png y usuarios_ultimo.png
+uv run matchaudit batch-compare \
+  --source-dir ./reportes \
+  --captured-dir ./capturas \
+  --prefix-match
+```
+
 ### Tipos de diferencias que MatchAudit detecta
 
 | Tipo | Ejemplo | Causa |
