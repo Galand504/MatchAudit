@@ -11,11 +11,18 @@ Requires ``easyocr`` and ``pillow`` (install via ``pip install matchaudit[ocr]``
 
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 from pandas import DataFrame
 
 from matchaudit.readers import DataReader
+
+# Suppress noisy PyTorch/EasyOCR deprecation warnings that the user cannot
+# act on — these come from inside torch's quantized module internals.
+warnings.filterwarnings("ignore", message="torch.quantize_per_tensor")
+warnings.filterwarnings("ignore", message="torch.ao.quantization is deprecated")
+warnings.filterwarnings("ignore", message="pin_memory.*argument is set as true")
 
 # ---------------------------------------------------------------------------
 # Lazy optional dependencies — each guarded so the module loads gracefully
