@@ -31,24 +31,28 @@ Un auditor necesita confirmar que lo que **se ve en pantalla** es exactamente lo
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
 
-### Paso a paso
+### Instalación base (Excel/CSV — recomendado siempre)
 
 ```bash
-# Clonar el repo
 git clone <repo-url>
 cd matchaudit
-
-# Sincronizar dependencias base
 uv sync
-
-# Verificar que funciona
 uv run matchaudit --help
+```
 
-# (Opcional) Instalar soporte OCR para capturas de pantalla
+Con esto ya funciona para comparar **archivos Excel vs Excel, CSV vs CSV, o Excel vs CSV**.
+
+### EasyOCR (solo para capturas de pantalla)
+
+Si vas a comparar contra **imágenes** (.png, .jpg), necesitás EasyOCR:
+
+```bash
 uv sync --extra ocr
 ```
 
-> **Windows**: EasyOCR y PyTorch CPU funcionan sin problemas. Si tenés GPU NVIDIA, EasyOCR la usa automáticamente (mucho más rápido).
+> **Windows**: EasyOCR + PyTorch CPU funcionan sin problemas. Si tenés GPU NVIDIA, EasyOCR la detecta automáticamente (mucho más rápido).
+
+> **Linux**: Si ves errores de torch durante la instalación, probá `uv sync --extra ocr --no-build-isolation`.
 
 ## Uso
 
