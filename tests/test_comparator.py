@@ -90,7 +90,7 @@ class TestMissingRows:
         result = compare(src, cap, key_columns=["id"])
         assert result.status == "mismatch"
         assert len(result.missing_rows) == 1
-        assert result.missing_rows[0].key == 3
+        assert result.missing_rows[0].key == "3"
         assert result.stats is not None
         assert result.stats.severity == "critical"
 
@@ -108,7 +108,7 @@ class TestExtraRows:
         result = compare(src, cap, key_columns=["id"])
         assert result.status == "mismatch"
         assert len(result.extra_rows) == 1
-        assert result.extra_rows[0].key == 3
+        assert result.extra_rows[0].key == "3"
 
     def test_multiple_extra_rows(self) -> None:
         src = _df(id=[1], name=["A"])
@@ -189,7 +189,7 @@ class TestEdgeCases:
         result = compare(src, cap, key_columns=["id", "type"])
         assert result.matched_rows == 2
         assert len(result.mismatched_rows) == 1
-        assert result.mismatched_rows[0].key == (1, "b")
+        assert result.mismatched_rows[0].key == ("1", "b")
 
     def test_nan_values_match(self) -> None:
         """NaN in both DataFrames at the same position should NOT be

@@ -45,18 +45,32 @@ def compare(
     """
     _validate_input(source_df, captured_df, key_columns)
 
+    # ------------------------------------------------------------------
+    # Separate rows with NaN key values — these can't participate in
+    # the merge because astype(str) would turn NaN → "nan", creating
+    # false cross-product matches when both sides have NaN keys.
+    # ------------------------------------------------------------------
+    source_null_mask = source_df[key_columns].isna().any(axis=1)
+    captured_null_mask = captured_df[key_columns].isna().any(axis=1)
+
+    source_null_rows = source_df[source_null_mask].copy()
+    captured_null_rows = captured_df[captured_null_mask].copy()
+
+    source_valid = source_df[~source_null_mask].copy()
+    captured_valid = captured_df[~captured_null_mask].copy()
+
     # Normalise key-column dtypes so int ↔ string matches (common when
     # OCR reads numeric identifiers as text — e.g. ``id_pais``).
     for col in key_columns:
-        source_df[col] = source_df[col].astype(str)
-        captured_df[col] = captured_df[col].astype(str)
+        source_valid[col] = source_valid[col].astype(str)
+        captured_valid[col] = captured_valid[col].astype(str)
 
     # ------------------------------------------------------------------
-    # Row classification — outer merge with indicator
+    # Row classification — outer merge with indicator (valid keys only)
     # ------------------------------------------------------------------
     merged = pd.merge(
-        source_df,
-        captured_df,
+        source_valid,
+        captured_valid,
         on=key_columns,
         how="outer",
         indicator=True,
@@ -150,6 +164,34 @@ def compare(
                 column=None,
                 expected="(missing in source)",
                 actual="(extra in captured)",
+            )
+        )
+
+    # ------------------------------------------------------------------
+    # Append rows with NaN key columns — they couldn't participate in
+    # the merge so they're reported as unmatched.
+    # ------------------------------------------------------------------
+    for _, row in source_null_rows.iterrows():
+        idx = int(row.name) if isinstance(row.name, (int, float)) else 0
+        missing_rows.append(
+            RowDiff(
+                index=idx,
+                key=_make_key(row, key_columns),
+                column=None,
+                expected="(present in source)",
+                actual="(missing in captured — key is empty)",
+            )
+        )
+
+    for _, row in captured_null_rows.iterrows():
+        idx = int(row.name) if isinstance(row.name, (int, float)) else 0
+        extra_rows.append(
+            RowDiff(
+                index=idx,
+                key=_make_key(row, key_columns),
+                column=None,
+                expected="(missing in source)",
+                actual="(extra in captured — key is empty)",
             )
         )
 
