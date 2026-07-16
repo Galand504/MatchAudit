@@ -1,0 +1,47 @@
+# openspec/config.yaml — MatchAudit
+schema: spec-driven
+
+context: |
+  Product: MatchAudit — data validation & reconciliation tool for audit teams.
+    Verifies that screenshot data matches source data (Excel/CSV/SQL).
+  Stack: not yet implemented (project is at conceptual stage, only one .md file exists)
+  Architecture: TBD
+  Testing: No test runner available (project is empty, no code or dependencies exist)
+  Style: TBD
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+testing:
+  strict_tdd: false
+  runner: none
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage: false
+  quality_tools:
+    linter: none
+    type_checker: none
+    formatter: none

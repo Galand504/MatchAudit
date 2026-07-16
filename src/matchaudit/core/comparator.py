@@ -45,6 +45,12 @@ def compare(
     """
     _validate_input(source_df, captured_df, key_columns)
 
+    # Normalise key-column dtypes so int ↔ string matches (common when
+    # OCR reads numeric identifiers as text — e.g. ``id_pais``).
+    for col in key_columns:
+        source_df[col] = source_df[col].astype(str)
+        captured_df[col] = captured_df[col].astype(str)
+
     # ------------------------------------------------------------------
     # Row classification — outer merge with indicator
     # ------------------------------------------------------------------
