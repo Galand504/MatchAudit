@@ -1,10 +1,13 @@
 name: CI
 
-on:
-  push:
-    branches: [main, "feat/**"]
-  pull_request:
-    branches: [main]
+# Disabled: GitHub Actions billing not available.
+# Re-enable by uncommenting the trigger block:
+# on:
+#   push:
+#     branches: [main, "feat/**"]
+#   pull_request:
+#     branches: [main]
+on: workflow_dispatch
 
 jobs:
   test:
