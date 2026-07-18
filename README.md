@@ -223,6 +223,24 @@ Para salida JSON (ideal para integrar con otras herramientas):
 uv run matchaudit compare ... --output json
 ```
 
+## Portable (ejecutable sin Python)
+
+Podés generar un `.exe` (o ejecutable Linux/macOS) que no necesita Python instalado:
+
+```bash
+# Windows — doble click o:
+scripts\build.bat
+
+# Linux / macOS:
+./scripts/build.sh
+```
+
+El resultado queda en `dist/MatchAudit/` — una carpeta portable que podés
+zippear y distribuir. Ejecutás `MatchAudit.exe` y abre la GUI directo.
+
+> **Nota**: EasyOCR + PyTorch pesan ~2 GB, la carpeta final va a ser grande.
+> En máquinas con GPU NVIDIA el OCR corre mucho más rápido.
+
 ## Desarrollo
 
 ```bash
