@@ -43,15 +43,11 @@ a = Analysis(
         "matchaudit.output.console",
         "matchaudit.readers",
         "matchaudit.readers.ocr",
-        "matchaudit.readers.csv_reader",
-        "matchaudit.readers.excel_reader",
+        "matchaudit.readers.csv",
+        "matchaudit.readers.excel",
 
-        # -- EasyOCR --
+        # -- EasyOCR (data dirs handled by Tree() below) --
         "easyocr",
-        "easyocr.character",
-        "easyocr.weights",
-        "easyocr.utils",
-        "easyocr.imgproc",
 
         # -- torch (CPU) --
         "torch",
