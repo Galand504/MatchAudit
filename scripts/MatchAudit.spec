@@ -126,7 +126,9 @@ if _easyocr_dir.is_dir():
 # Windows Store Python installs packages in user-local paths that
 # getsitepackages() may miss. collect_all searches sys.path at runtime.
 from PyInstaller.utils.hooks import collect_all as _collect_all
-for pkg in ("pandas", "numpy", "openpyxl", "customtkinter", "darkdetect"):
+for pkg in ("pandas", "numpy", "openpyxl", "customtkinter", "darkdetect",
+            "easyocr", "torch", "torchvision", "opencv-python-headless",
+            "scikit-image", "Pillow"):
     try:
         datas, binaries, hiddenimports = _collect_all(pkg)
         a.datas += datas
@@ -156,7 +158,7 @@ exe = EXE(
     strip=False,
     upx=True,
     runtime_tmpdir=None,
-    console=False,                     # no terminal window on Windows
+    console=True,                      # TEMP: console for debugging; change to False once OCR works
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
