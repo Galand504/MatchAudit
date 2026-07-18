@@ -20,9 +20,13 @@ from pathlib import Path
 PROJECT_ROOT = Path(os.getcwd()).resolve()
 SRC = PROJECT_ROOT / "src"
 
-# site.getsitepackages() works in both venvs and system-wide installs.
-_site_dirs = site.getsitepackages()
-VENV_SITE = Path(_site_dirs[0]) if _site_dirs else Path(sys.prefix) / "Lib" / "site-packages"
+# Collect ALL site-packages dirs (system + user) — Windows Store Python
+# may install packages in user-local paths that getsitepackages() misses.
+_site_dirs = site.getsitepackages() + site.getusersitepackages()
+ALL_SITE = [Path(d) for d in _site_dirs if Path(d).is_dir()]
+# VENV_SITE is the first existing dir (used for EasyOCR data lookup)
+VENV_SITE = ALL_SITE[0] if ALL_SITE else Path(sys.prefix) / "Lib" / "site-packages"
+print(f"  Site packages: {[str(d) for d in ALL_SITE]}")
 
 # ── Block cipher ─────────────────────────────────────────────────────────
 block_cipher = None
@@ -118,10 +122,24 @@ if _easyocr_dir.is_dir():
             a.datas += Tree(str(src), prefix=f"easyocr/{sub}")
             print(f"  ✓ Bundled easyocr/{sub}")
 
+# ── Collect packages from ALL site dirs (user + system) ──────────────────
+# Windows Store Python installs packages in user-local paths that
+# getsitepackages() may miss. collect_all searches sys.path at runtime.
+from PyInstaller.utils.hooks import collect_all as _collect_all
+for pkg in ("pandas", "numpy", "openpyxl", "customtkinter", "darkdetect"):
+    try:
+        datas, binaries, hiddenimports = _collect_all(pkg)
+        a.datas += datas
+        a.binaries += binaries
+        a.hiddenimports += hiddenimports
+        print(f"  ✓ collect_all({pkg}): {len(datas)} datas, {len(binaries)} binaries")
+    except Exception as exc:
+        print(f"  ⚠ collect_all({pkg}) failed: {exc}")
+
 # ── Collect any ·.pth / ·.onnx model files that torch may need at init ──
-# This catches craft / recognition model files that live outside easyocr.
-for pth in VENV_SITE.rglob("*.pth"):
-    a.binaries.append((pth.name, str(pth), "BINARY"))
+for site_dir in ALL_SITE:
+    for pth in site_dir.rglob("*.pth"):
+        a.binaries.append((pth.name, str(pth), "BINARY"))
 
 # ── PYZ ──────────────────────────────────────────────────────────────────
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
