@@ -19,6 +19,10 @@
   whose stem starts with `<source_stem>_`.  E.g. `usuarios.csv` is compared against
   both `usuarios_primer.png` and `usuarios_ultimo.png`.
 - **`codigo_usuario`** added to auto-detected key column candidates.
+- **`matchaudit-gui`** — desktop GUI with CustomTkinter (``pip install matchaudit[gui]``).
+  Select source + capture via file dialogs, auto-detect key column, run comparison
+  with progress indicator, view results in tabbed panels (differences / missing /
+  extra), and export to JSON.
 
 ### Fixed
 

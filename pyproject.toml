@@ -34,9 +34,12 @@ dev = [
 
 [project.optional-dependencies]
 ocr = ["easyocr", "pillow"]
+gui = ["customtkinter>=5.2"]
+full = ["matchaudit[ocr,gui]"]
 
 [project.scripts]
 matchaudit = "matchaudit.cli:main"
+matchaudit-gui = "matchaudit.gui:main"
 
 [build-system]
 requires = ["setuptools>=68"]
