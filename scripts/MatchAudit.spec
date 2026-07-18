@@ -140,9 +140,33 @@ for pkg in ("pandas", "numpy", "openpyxl", "customtkinter", "darkdetect",
         print(f"  ⚠ collect_all({pkg}) failed: {exc}")
 
 # ── Collect any ·.pth / ·.onnx model files that torch may need at init ──
+_existing_bins = {b[0] for b in a.binaries}
 for site_dir in ALL_SITE:
     for pth in site_dir.rglob("*.pth"):
-        a.binaries.append((pth.name, str(pth), "BINARY"))
+        if pth.name not in _existing_bins:
+            a.binaries.append((pth.name, str(pth), "BINARY"))
+            _existing_bins.add(pth.name)
+
+# ── Deduplicate binaries and datas (collect_all may overlap Analysis) ───
+_seen_bins = set()
+_deduped_bins = []
+for entry in a.binaries:
+    key = (entry[0], entry[1]) if len(entry) >= 2 else entry[0]
+    if key not in _seen_bins:
+        _seen_bins.add(key)
+        _deduped_bins.append(entry)
+a.binaries = _deduped_bins
+
+_seen_datas = set()
+_deduped_datas = []
+for entry in a.datas:
+    key = (entry[0], entry[1]) if len(entry) >= 2 else entry[0]
+    if key not in _seen_datas:
+        _seen_datas.add(key)
+        _deduped_datas.append(entry)
+a.datas = _deduped_datas
+
+print(f"  After dedup: {len(a.binaries)} binaries, {len(a.datas)} datas")
 
 # ── PYZ ──────────────────────────────────────────────────────────────────
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
