@@ -132,7 +132,8 @@ for pkg in ("pandas", "numpy", "openpyxl", "customtkinter", "darkdetect",
             "scikit-image", "Pillow"):
     try:
         datas, binaries, hiddenimports = _collect_all(pkg)
-        a.datas += datas
+        # collect_all returns datas as 2-tuples (src, dest); COLLECT needs 3-tuples.
+        a.datas += [(s, d, "DATA") for s, d in datas]
         a.binaries += binaries
         a.hiddenimports += hiddenimports
         print(f"  ✓ collect_all({pkg}): {len(datas)} datas, {len(binaries)} binaries")
