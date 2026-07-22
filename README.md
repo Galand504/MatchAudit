@@ -54,23 +54,6 @@ uv sync --extra ocr
 
 > **Linux**: Si ves errores de torch durante la instalación, probá `uv sync --extra ocr --no-build-isolation`.
 
-### GUI (interfaz gráfica)
-
-Si preferís una ventana en vez de terminal:
-
-```bash
-uv sync --extra gui
-uv run matchaudit-gui
-```
-
-Para tener OCR + GUI:
-
-```bash
-uv sync --extra ocr --extra gui
-# o directamente:
-uv sync --extra full
-```
-
 ## Uso
 
 ### Lo más simple — todo automático
@@ -113,14 +96,6 @@ uv run matchaudit compare \
 | `--ocr-language` | `es,en` | Idiomas para OCR (separados por coma) |
 | `--ocr-conf-threshold` | `0.0` | Umbral de confianza OCR (0.0–1.0) |
 | `--ocr-upscale` | `no` | Escalar imagen antes de OCR (más lento, detecta IDs chicos) |
-
-### Interfaz gráfica
-
-También tenés `matchaudit-gui` que abre una ventana sin necesidad de terminal:
-
-```bash
-uv run matchaudit-gui
-```
 
 ### Modos de velocidad
 
