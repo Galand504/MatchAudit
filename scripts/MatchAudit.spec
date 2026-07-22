@@ -22,9 +22,8 @@ SRC = PROJECT_ROOT / "src"
 
 # Collect ALL site-packages dirs (system + user) — Windows Store Python
 # may install packages in user-local paths that getsitepackages() misses.
-_user_site = site.getusersitepackages()
-_site_dirs = site.getsitepackages() + ([_user_site] if isinstance(_user_site, str) else _user_site)
-ALL_SITE = [Path(d) for d in _site_dirs if d and Path(d).is_dir()]
+_site_dirs = site.getsitepackages() + site.getusersitepackages()
+ALL_SITE = [Path(d) for d in _site_dirs if Path(d).is_dir()]
 # VENV_SITE is the first existing dir (used for EasyOCR data lookup)
 VENV_SITE = ALL_SITE[0] if ALL_SITE else Path(sys.prefix) / "Lib" / "site-packages"
 print(f"  Site packages: {[str(d) for d in ALL_SITE]}")
