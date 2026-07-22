@@ -32,7 +32,6 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
-!scripts/MatchAudit.spec
 
 # Installer logs
 pip-log.txt

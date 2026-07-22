@@ -23,9 +23,6 @@
   Select source + capture via file dialogs, auto-detect key column, run comparison
   with progress indicator, view results in tabbed panels (differences / missing /
   extra), and export to JSON.
-- **Portable build**: ``scripts/MatchAudit.spec`` + ``scripts/build.bat`` /
-  ``scripts/build.sh`` — build a standalone executable folder with
-  PyInstaller that requires zero Python installation to run.
 
 ### Fixed
 
