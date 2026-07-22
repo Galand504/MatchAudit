@@ -49,10 +49,8 @@ try:
     import easyocr  # noqa: F811
 
     _HAS_EASYOCR = True
-except Exception as _exc:
+except ImportError:
     _HAS_EASYOCR = False
-    import sys
-    print(f"[matchaudit] easyocr import failed: {_exc}", file=sys.stderr)
 
 
 def _get_easyocr(languages: list[str] | None = None, gpu: bool = False) -> object:
