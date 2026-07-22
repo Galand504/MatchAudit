@@ -148,30 +148,26 @@ for site_dir in ALL_SITE:
             a.binaries.append((pth.name, str(pth), "BINARY"))
             _existing_bins.add(pth.name)
 
-# ── Deduplicate and normalize binaries and datas ─────────────────────────
-# COLLECT requires every entry to be a 3-tuple (dest, src, typecode).
-# collect_all or Tree() may produce 2-tuples in some edge cases.
-def _normalize_toc(entries, default_type="DATA"):
-    """Ensure every TOC entry is a 3-tuple, deduplicate by (dest, src)."""
-    seen = set()
-    result = []
-    for e in entries:
-        if len(e) == 2:
-            dest, src = e
-            typecode = default_type
-        elif len(e) >= 3:
-            dest, src, typecode = e[0], e[1], e[2]
-        else:
-            continue
-        key = (dest, src)
-        if key not in seen:
-            seen.add(key)
-            result.append((dest, src, typecode))
-    return result
+# ── Deduplicate binaries and datas (collect_all may overlap Analysis) ───
+_seen_bins = set()
+_deduped_bins = []
+for entry in a.binaries:
+    key = (entry[0], entry[1]) if len(entry) >= 2 else entry[0]
+    if key not in _seen_bins:
+        _seen_bins.add(key)
+        _deduped_bins.append(entry)
+a.binaries = _deduped_bins
 
-a.binaries = _normalize_toc(a.binaries, "BINARY")
-a.datas = _normalize_toc(a.datas, "DATA")
-print(f"  After normalize: {len(a.binaries)} binaries, {len(a.datas)} datas")
+_seen_datas = set()
+_deduped_datas = []
+for entry in a.datas:
+    key = (entry[0], entry[1]) if len(entry) >= 2 else entry[0]
+    if key not in _seen_datas:
+        _seen_datas.add(key)
+        _deduped_datas.append(entry)
+a.datas = _deduped_datas
+
+print(f"  After dedup: {len(a.binaries)} binaries, {len(a.datas)} datas")
 
 # ── PYZ ──────────────────────────────────────────────────────────────────
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
